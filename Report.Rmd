@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-Walmart is an American multinational retail corporation that operates a chain of hypermarkets and grocery stores in the United States, headquartered in Bentonville, Arkansas. Through Kaggle, Walmart opened a recruiting competition where job-seekers are provided with historical sales data for 45 Walmart stores across the country each containing many departments. Additionally, Walmart runs promotional markdown events throughout the year. These markdowns precede holidays, the four largest of which are the Super Bowl, Labor Day, Thanksgiving, and Christmas. The objective is to predict the sales for each department in each store (~3,000 Forecasts) using Machine Learning Algorithms.  
+Walmart is an American multinational retail corporation that operates a chain of hypermarkets and grocery stores in the United States, headquartered in Bentonville, Arkansas. Through Kaggle, Walmart opened a recruiting competition where job-seekers are provided with historical sales data for 45 Walmart stores across the country each containing many departments. Additionally, Walmart runs promotional markdown events throughout the year. These markdowns precede holidays, the four largest of which are the Super Bowl, Labor Day, Thanksgiving, and Christmas. The objective of this paper is to predict the sales for each department in each store (~3,000 Forecasts) using Multiple Linear Regression, Random Forest and Gradient Boost.  
 
 This document is structured in four primary sections:
 
@@ -76,7 +76,7 @@ Breaking this formula down:
 * $y_i$ is the actual sales
 * $w_i$ are the weights.
  
-The reason that the model is evaluated through a WMAE is that weeks including holidays are weighted five times higher in the evaluation than non-holiday weeks. During holidays $w$ is equal to 5, else $w$ is equal to 1.
+The model is evaluated through a WMAE because weeks that include holidays are weighted five times higher in the evaluation than non-holiday weeks. During holidays $w$ is equal to 5, else $w$ is equal to 1.
  
 # Methods & Analysis
 
@@ -102,7 +102,7 @@ stores_df <- read_csv("data/stores.csv")
 features_df <- read_csv("data/features.csv")
 ```
 
-We observe the first 6  rows of the train_df dataset. There are five features represented by the columns and each row represents an observation. We can confirm that this dataset is in tidy format. However, we also observe that the "Store" and "Dept" are being read as "dbl" meaning that they are being read as numeric values with decimal points. We will want to convert these to Factors to represent categorical data.
+Below are the first 6 rows of the train_df dataset. There are five features represented by the columns and each row represents an observation. We can confirm that this dataset is in tidy format. However, we also observe that the "Store" and "Dept" are being read as "dbl" meaning that they are being read as numeric values with decimal points. We will want to convert these to Factors to represent categorical data.
 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 head(train_df)
@@ -113,7 +113,7 @@ train_df <- train_df %>%
 )
 ```
 
-We observe the first 6  rows of the stores_df dataset. There are three features represented by the columns and each row represents an observation. We can confirm that this dataset is in a tidy format. As with train_df, we also observe that the "Store" is being read as "dbl" and the Type variable is being read as "chr" a character. We will want to convert these to Factors to represent categorical data.
+The first 6  rows of the stores_df dataset are generated below. There are three features represented by the columns and each row represents an observation. We can confirm that this dataset is in a tidy format. As with train_df, we also observe that the "Store" is being read as "dbl" and the Type variable is being read as "chr" a character. We will want to convert these to Factors to represent categorical data.
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 head(stores_df)
 stores_df <- stores_df %>%
@@ -123,7 +123,7 @@ stores_df <- stores_df %>%
     )
 ```
  
-We observe the first 6  rows of the features_df dataset. There are 12 features represented by the columns and each row represents an observation. We can confirm that this dataset is in tidy format. As with the previous datasets, we convert "Store" to a Factor. We also observe the MarkDown columns have NA observations. We will replace NA with 0.
+The first 6  rows of the final dataset, features_df, are listed below. There are 12 features represented by the columns and each row represents an observation. We can confirm that this dataset is in tidy format. As with the previous datasets, we convert "Store" to a Factor. We also observe the MarkDown columns have NA observations. We will replace NA with 0.
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 head(features_df)
 features_df <- features_df %>%
@@ -163,7 +163,7 @@ test_df <- master_df %>%
   filter(Date > c("2012-02-10"))
 
 test_df <- test_df %>% select(ID, StoreDept, Weekly_Sales, IsHoliday, Size)
-rm(features_df, stores_df, train_df)
+remove(features_df, stores_df, train_df)
 ```
 
 ## Data Exploration
@@ -232,7 +232,7 @@ grid.arrange(
 #### Trend\
 
 Using a moving average window, we can detect the underlying trend which has a smoothing effect on the time series. To perform this decomposition, it is important to use a moving window that represents the size of the seasonality. As our time series is weekly, our moving average window is ~52.
-We observe that all stores follow a similar trend, with an inflection plot towards the end of the year.
+We observe that all stores follow a trend, with an inflection plot towards the end of the year.
 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 grid.arrange(
@@ -253,12 +253,12 @@ grid.arrange(
     autoplot(stl_weekly_ts$B$time.series[,3]) + labs(subtitle = "Store Type: B", x = "", y = ""),
     autoplot(stl_weekly_ts$C$time.series[,3]) + labs(subtitle = "Store Type: C", y = "")
 )
-rm(stl_weekly_ts, weekly_ts, exp_sales)
+remove(stl_weekly_ts, weekly_ts, exp_sales)
 ```
 
 ### Feature Selection
 
-Now that we have performed Time Series Decomposition and seen the effects that Trend, Seasonality and Remainders have on our time series, we will dive into our features and determine through Feature Selection which features influence Weekly Sales, our target variable, the most.
+Now that we have performed Time Series Decomposition and seen the effects that Trend, Seasonality and Remainders have on our time series, we will dive into our features and determine through Feature Selection which features have the greatest influence on Weekly Sales, our target variable.
 
 Feature Selection is the process of selecting a subset of relevant features which influence our target variable for use in a machine learning model. There are primarily three benefits of performing feature selection:
 
@@ -304,7 +304,7 @@ As the purpose of this project is to project Weekly Sales, we will focus on the 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 Top_Features <- Cor_Df["Weekly_Sales",] %>% as.matrix() %>% abs()
 Top_Features[order(Top_Features[,1], decreasing = T),]
-rm(Top_Features, Cor_Df)
+remove(Top_Features, Cor_Df)
 ```
 
 
@@ -349,7 +349,7 @@ Through Boruta, we can observe that the most important features are "Dept", "Sto
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 boruta_stats <- as.vector(attStats(boruta))
 boruta_stats[order(boruta_stats$medianImp, decreasing = TRUE),]
-rm(boruta_stats)
+remove(boruta_stats, boruta)
 ```
 
 ## Modeling
@@ -375,7 +375,7 @@ In our Multiple Linear Regression model, we will use the Feature determined from
 
 ### Random Forest Regressor
 
-In a single statement, Random Forest is an ensemble (combined predictions from two or more models) of Decision Tree algorithms.
+Simply put, Random Forest is an ensemble (combined predictions from two or more models) of Decision Tree algorithms.
 
 A Decision Tree algorithm works by creating a "tree" of all the possible solutions to a decision based on defined conditions. It operates very much like recursive if-then rules. A collection of trees is a "forest" hence Random Forest.
 
@@ -467,9 +467,9 @@ features_df <- read_csv("data/features.csv")
 tidy_df <- left_join(tidy_df, stores_df, by = "Store")
 tidy_df <- left_join(tidy_df, features_df, by = c("Store", "Date"))
 tidy_df <- tidy_df %>% 
-  select(Date, StoreDept, Store, Dept, Weekly_Sales, Size)
+  select(Date, StoreDept, Store, Dept, Weekly_Sales, Size, IsHoliday)
 
-remove(stores_df, features_df)
+remove(stores_df, features_df, exp_df)
 ```
 
 ## Multiple Linear Regression
@@ -496,7 +496,7 @@ remove(W_LM, W_LM_Model, W_LM_Yhat)
 
 ### Data Preparation
 
-In building our Machine Learning Algorithms, we will use the help of a library Modeltime. Modeltime allows the user to develop multiple Machine Learning Algorithms for Time Series Forecasting. The first steps in using Modeltime is data preparation. Here, we first extend our time series as far as we wish to predict. Next, we identify our ID column which acts as our "grouper" which is StoreDept and again restate our extension. Finally, as we stated in the beginning of this project, we split our data into a Train and Validation set. We split by equal parts, 53 weeks, ensuring that we have a full year to fit our models.
+In building our Machine Learning Algorithms, we will use the help of a library Modeltime. Modeltime allows the user to develop multiple Machine Learning Algorithms for Time Series Forecasting. The first steps in using Modeltime is data preparation. Here, we first extend our time series to as far as we wish to predict. Next, we identify our ID column which acts as our "grouper" which is StoreDept and again restate our extension. Finally, as we stated in the beginning of this project, we split our data into a Train and Validation set. We split by equal parts, 53 weeks, ensuring that we have a full year to fit our models.
 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 ## Data Preparation
@@ -548,6 +548,8 @@ rfr <- workflow() %>%
 xgb <- workflow() %>%
   add_model(boost_tree("regression") %>% set_engine("xgboost")) %>%
   add_recipe(model_recipe )
+
+remove(model_recipe)
 ```
 
 ### Fit Model on Training Set
@@ -559,6 +561,8 @@ nested_models <- modeltime_nested_fit(
   # Add Models
   rfr,
   xgb)
+
+remove(rfr, xgb)
 ```
 
 
@@ -582,6 +586,72 @@ nested_models %>%
     .interactive = FALSE
   )
 ```
+
+```{r, include=FALSE}
+filtered_fit_models <- as.data.frame(nested_models %>% 
+  extract_nested_test_forecast()) %>% filter(.model_desc != "ACTUAL") %>%
+  select(StoreDept, .model_desc, .index, .value) %>% 
+  spread(key = .model_desc, value = .value) %>%
+  unite(ID, StoreDept, .index, sep = "_", remove = FALSE) %>%
+  select(ID, RANGER, XGBOOST)
+
+# Recreate unique ID between StoreDept and Date for joining
+tidy_df <- tidy_df %>% 
+  unite(ID, StoreDept, Date, sep = "_", remove = FALSE)
+```
+
+
+## Random Forest Result on Training Set
+
+The first results are in. On the training set, we see a major improvement from our Multiple Linear Regression model.
+
+```{r}
+F_RandomForest <- filtered_fit_models %>% 
+  select(ID, RANGER)
+
+F_RandomForest <- inner_join(F_RandomForest, tidy_df, by = "ID") %>%
+  select(ID, RANGER)
+
+test_df_RF <- inner_join(F_RandomForest, tidy_df, by = "ID") %>%
+  select(ID, Weekly_Sales, IsHoliday)
+
+colnames(F_RandomForest)[2] <- "Weekly_Sales"
+
+results <- bind_rows(results,
+                     data_frame(
+                       Model = "Random Forest - Training Set",
+                       WMAE = WMAE(F_RandomForest, test_df_RF)
+                     ))
+
+results %>% knitr::kable()
+```
+
+
+## Gradient Boosting Results on Test Set
+
+With Gradient Boost, we also see a major improvement from Multiple Linear Regression, however, our results are not as good as those from Random Forest.
+
+```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
+F_XGBOOST<- filtered_fit_models %>% 
+  select(ID, XGBOOST)
+
+F_XGBOOST <- inner_join(F_XGBOOST, tidy_df, by = "ID") %>%
+  select(ID, XGBOOST)
+
+test_df_XG <- inner_join(F_XGBOOST, tidy_df, by = "ID") %>%
+  select(ID, Weekly_Sales, IsHoliday)
+
+colnames(F_XGBOOST)[2] <- "Weekly_Sales"
+
+results <- bind_rows(results,
+                     data_frame(
+                       Model = "Gradient Boosting - Training Set",
+                       WMAE = WMAE(F_XGBOOST, test_df_XG)
+                     ))
+
+results %>% knitr::kable()
+```
+
 
 ### Refit Model for Future Forecast
 
@@ -620,9 +690,9 @@ filtered_refit_models <- as.data.frame(refit_models %>%
 ```
 
 
-## Random Forest Results
+## Random Forest Results on Test Set
 
-We see a massive improvement in our results from Multiple Linear Regression to Random Forest.
+We see a massive improvement in our results from Multiple Linear Regression and the training set results for Random Forest.
 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 F_RandomForest<- filtered_refit_models %>% 
@@ -638,7 +708,7 @@ colnames(F_RandomForest)[2] <- "Weekly_Sales"
 
 results <- bind_rows(results,
                      data_frame(
-                       Model = "Random Forest",
+                       Model = "Random Forest - Test Set",
                        WMAE = WMAE(F_RandomForest, test_df_RF)
                      ))
 
@@ -646,9 +716,9 @@ results %>% knitr::kable()
 ```
 
 
-## Gradient Boosting Results
+## Gradient Boosting Results on Test Set
 
-The final results are in. We see a slight decrease in accuracy from Random Forest but overall, both models outperformed our Linear Regression Model.
+The final results are in. We see a slight decrease in accuracy from Random Forest as we did from the training sets, but overall, both models outperformed our Linear Regression Model.
 
 ```{r, fig.align='center', comment='', warning=FALSE, message=FALSE, out.width='80%', out.height = '40%'}
 F_XGBOOST<- filtered_refit_models %>% 
@@ -664,8 +734,8 @@ colnames(F_XGBOOST)[2] <- "Weekly_Sales"
 
 results <- bind_rows(results,
                      data_frame(
-                       Model = "Gradient Boosting",
-                       WMAE = WMAE(F_XGBOOST, test_df_RF)
+                       Model = "Gradient Boosting - Test Set",
+                       WMAE = WMAE(F_XGBOOST, test_df_XG)
                      ))
 
 results %>% knitr::kable()
