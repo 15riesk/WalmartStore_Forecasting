@@ -299,6 +299,61 @@ nested_models %>%
     .interactive = FALSE
   )
 
+# Extract forecasts from training set
+
+filtered_fit_models <- as.data.frame(nested_models %>% 
+  extract_nested_test_forecast()) %>% filter(.model_desc != "ACTUAL") %>%
+  select(StoreDept, .model_desc, .index, .value) %>% 
+  spread(key = .model_desc, value = .value) %>%
+  unite(ID, StoreDept, .index, sep = "_", remove = FALSE) %>%
+  select(ID, RANGER, XGBOOST)
+
+# Recreate unique ID between StoreDept and Date for joining
+tidy_df <- tidy_df %>% 
+  unite(ID, StoreDept, Date, sep = "_", remove = FALSE)
+
+# Random Forest Result on Training Set
+F_RandomForest <- filtered_fit_models %>% 
+  select(ID, RANGER)
+
+F_RandomForest <- inner_join(F_RandomForest, tidy_df, by = "ID") %>%
+  select(ID, RANGER)
+
+test_df_RF <- inner_join(F_RandomForest, tidy_df, by = "ID") %>%
+  select(ID, Weekly_Sales, IsHoliday)
+
+colnames(F_RandomForest)[2] <- "Weekly_Sales"
+
+results <- bind_rows(results,
+                     data_frame(
+                       Model = "Random Forest - Training Set",
+                       WMAE = WMAE(F_RandomForest, test_df_RF)
+                     ))
+
+results %>% knitr::kable()
+
+# Gradient Boosting Results on Test Set
+
+F_XGBOOST<- filtered_fit_models %>% 
+  select(ID, XGBOOST)
+
+F_XGBOOST <- inner_join(F_XGBOOST, tidy_df, by = "ID") %>%
+  select(ID, XGBOOST)
+
+test_df_XG <- inner_join(F_XGBOOST, tidy_df, by = "ID") %>%
+  select(ID, Weekly_Sales, IsHoliday)
+
+colnames(F_XGBOOST)[2] <- "Weekly_Sales"
+
+results <- bind_rows(results,
+                     data_frame(
+                       Model = "Gradient Boosting - Training Set",
+                       WMAE = WMAE(F_XGBOOST, test_df_XG)
+                     ))
+
+results %>% knitr::kable()
+
+
 ## Refit model for future forecast
 
 set.seed(1)
